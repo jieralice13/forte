@@ -288,7 +288,8 @@ class Predictor(BaseBatchProcessor):
             "feature_scheme": None,
             "batch_size": None,
             "model": None,
-            "batcher": cls.define_batcher().default_configs()
+            "batcher": cls.define_batcher().default_configs(),
+            "do_eval": False
         })
         return super_config
 
@@ -300,6 +301,7 @@ class Predictor(BaseBatchProcessor):
                     batcher_config["feature_scheme"][tag] = scheme
             batcher_config["batch_size"] = configs.batch_size
             configs.batcher = batcher_config
+            self.do_eval = configs.do_eval
 
         super().initialize(resources, configs)
 
@@ -333,8 +335,9 @@ class Predictor(BaseBatchProcessor):
         predictions = self.predict(features)
         for tag, preds in predictions.items():
             for pred, pack, instance in zip(preds, packs, instances):
-                self.configs.feature_scheme[tag]["extractor"]. \
-                    pre_evaluation_action(pack, instance)
+                if self.do_eval:
+                    self.configs.feature_scheme[tag]["extractor"]. \
+                        pre_evaluation_action(pack, instance)
                 self.configs.feature_scheme[tag]["extractor"]. \
                     add_to_pack(pack, instance, pred)
                 pack.add_all_remaining_entries()
